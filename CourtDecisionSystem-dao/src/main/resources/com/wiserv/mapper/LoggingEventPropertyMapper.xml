@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wiserv.dao.LoggingEventPropertyDao">
+    <!-- LoggingEventProperty的resultMap,column是给数据库列起的别名,它对应property类的属性-->
+    <resultMap id="result_LoggingEventProperty_Map" type="com.wiserv.bean.po.LoggingEventProperty">
+        <id column="event_id" property="eventId" />
+        <result column="mapped_key" property="mappedKey" />
+        <result column="mapped_value" property="mappedValue" />
+    </resultMap>
+
+	   <!-- Assist用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+	   <!-- updateAssist用于更新数据的使用它拓展自Assist,用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+    <!-- 数据库中表名为:logging_event_property的列名,as前是数据库的列明,as后是列的别名用于映射成实体类中的属性,需要注意的是别名必须与resultMap中的column别名一致 -->
+    <sql id="logging_event_property_Column">
+        logging_event_property.event_id as event_id
+        ,logging_event_property.mapped_key as mapped_key
+        ,logging_event_property.mapped_value as mapped_value
+    </sql>
+
+    <!--获得类名为:LoggingEventProperty对应的数据库表的数据总行数 -->
+    <select id="getLoggingEventPropertyRowCount" parameterType="com.wiserv.common.Assist" resultType="java.lang.Long">
+        select count(event_id) from logging_event_property
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <!-- 获得类名为:LoggingEventProperty对应数据库中表的数据集合 -->
+    <select id="selectLoggingEventProperty" parameterType="com.wiserv.common.Assist"  resultMap="result_LoggingEventProperty_Map">
+        select  <if test="distinct !=null">${distinct}</if>
+        <choose>
+            <when test="resultColumn!=null">${resultColumn}</when>
+            <otherwise>
+        <include refid="logging_event_property_Column" /> 
+            </otherwise>
+        </choose>
+        from logging_event_property
+        <choose>
+            <when test="rowSize ==null">
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+            </when>
+            <otherwise>
+                inner join
+                (
+                SELECT event_id as primary_key FROM logging_event_property
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+                <choose>
+                    <when test="startRow !=null and rowSize !=null">LIMIT #{startRow},#{rowSize} </when>
+                    <when test="rowSize !=null">LIMIT #{rowSize}</when>
+                 </choose>
+                 ) as tmp
+                 on tmp.primary_key=logging_event_property.event_id
+            </otherwise>
+        </choose>
+    </select> 
+
+    <!-- 获得一个LoggingEventProperty对象,以参数LoggingEventProperty对象中不为空的属性作为条件进行查询-->
+    <select id="selectLoggingEventPropertyByObj" parameterType="com.wiserv.bean.po.LoggingEventProperty" resultMap="result_LoggingEventProperty_Map">
+        select 
+            <include refid="logging_event_property_Column" /> 
+        from logging_event_property
+        <where>
+            <if test="mappedValue != null "> and logging_event_property.mapped_value = #{mappedValue}</if>
+            <if test="mappedKey != null "> and logging_event_property.mapped_key = #{mappedKey}</if>
+            <if test="eventId != null "> and logging_event_property.event_id = #{eventId}</if>
+        </where>
+    </select> 
+
+    <!-- 通过LoggingEventProperty的id获得对应数据库中表的数据对象-->
+    <select id="selectLoggingEventPropertyById" parameterType="java.lang.Long" resultMap="result_LoggingEventProperty_Map">
+        select 
+            <include refid="logging_event_property_Column" /> 
+        from logging_event_property
+        where logging_event_property.event_id = #{id}
+    </select> 
+
+    <!-- 将LoggingEventProperty插入到对应数据库的表中,包括属性值为null的数据-->
+
+    <insert id="insertLoggingEventProperty" parameterType="com.wiserv.bean.po.LoggingEventProperty">
+        insert into logging_event_property(event_id,mapped_key,mapped_value) 
+        values(#{eventId},#{mappedKey},#{mappedValue})
+    </insert>
+
+    <!-- 将LoggingEventProperty中属性值不为null的数据,插入到对应数据库的表中-->
+    <insert id="insertNonEmptyLoggingEventProperty" parameterType="com.wiserv.bean.po.LoggingEventProperty">
+        insert into logging_event_property
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="eventId != null">event_id,</if>
+            <if test="mappedKey != null">mapped_key,</if>
+            <if test="mappedValue != null">mapped_value,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="eventId != null"> #{eventId},</if>
+            <if test="mappedKey != null"> #{mappedKey},</if>
+            <if test="mappedValue != null"> #{mappedValue},</if>
+        </trim>
+    </insert>
+
+    <!-- 通过LoggingEventProperty的id将数据库表中对应的数据删除-->
+    <delete id="deleteLoggingEventPropertyById" parameterType="java.lang.Long">
+        delete from logging_event_property
+        where event_id = #{id}
+    </delete>
+
+    <!-- 通过辅助工具Assist中的条件将LoggingEventProperty对应的数据库表的数据删除-->
+    <delete id="deleteLoggingEventProperty" parameterType="com.wiserv.common.Assist">
+        delete from logging_event_property
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <!-- 通过LoggingEventProperty的id将LoggingEventProperty的数据更新到数据库中对应的表,包括值null的数据-->
+    <update id="updateLoggingEventPropertyById" parameterType="com.wiserv.bean.po.LoggingEventProperty">
+        update logging_event_property set
+            mapped_key=#{mappedKey}
+            ,mapped_value=#{mappedValue}
+        where event_id=#{eventId}
+    </update>
+
+    <!-- 通过LoggingEventProperty的id将LoggingEventProperty中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyLoggingEventPropertyById" parameterType="com.wiserv.bean.po.LoggingEventProperty">
+        update logging_event_property
+        <set>
+            <if test="mappedKey != null">
+                mapped_key=#{mappedKey},
+            </if>
+            <if test="mappedValue != null">
+                mapped_value=#{mappedValue},
+            </if>
+        </set>
+        where event_id=#{eventId}
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将LoggingEventProperty中的数据更新到数据库对应的表中,包括值为null的数据-->
+    <update id="updateLoggingEventProperty" parameterType="map">
+        update logging_event_property
+        <set>
+                event_id=#{enti.eventId},
+                mapped_key=#{enti.mappedKey},
+                mapped_value=#{enti.mappedValue},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将LoggingEventProperty中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyLoggingEventProperty" parameterType="map">
+        update logging_event_property
+        <set>
+            <if test="enti.eventId != null">
+                event_id=#{enti.eventId},
+            </if>
+            <if test="enti.mappedKey != null">
+                mapped_key=#{enti.mappedKey},
+            </if>
+            <if test="enti.mappedValue != null">
+                mapped_value=#{enti.mappedValue},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>

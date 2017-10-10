@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wiserv.dao.SysPermissionDao">
+    <!-- SysPermission的resultMap,column是给数据库列起的别名,它对应property类的属性-->
+    <resultMap id="result_SysPermission_Map" type="com.wiserv.bean.po.SysPermission">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="description" property="description" />
+        <result column="url" property="url" />
+        <result column="code" property="code" />
+        <result column="p_id" property="pId" />
+        <result column="state" property="state" />
+    </resultMap>
+
+	   <!-- Assist用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+	   <!-- updateAssist用于更新数据的使用它拓展自Assist,用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+    <!-- 数据库中表名为:sys_permission的列名,as前是数据库的列明,as后是列的别名用于映射成实体类中的属性,需要注意的是别名必须与resultMap中的column别名一致 -->
+    <sql id="sys_permission_Column">
+        sys_permission.id as id
+        ,sys_permission.name as name
+        ,sys_permission.description as description
+        ,sys_permission.url as url
+        ,sys_permission.code as code
+        ,sys_permission.p_id as p_id
+        ,sys_permission.state as state
+    </sql>
+
+    <!--获得类名为:SysPermission对应的数据库表的数据总行数 -->
+    <select id="getSysPermissionRowCount" parameterType="com.wiserv.common.Assist" resultType="java.lang.Long">
+        select count(id) from sys_permission
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <!-- 获得类名为:SysPermission对应数据库中表的数据集合 -->
+    <select id="selectSysPermission" parameterType="com.wiserv.common.Assist"  resultMap="result_SysPermission_Map">
+        select  <if test="distinct !=null">${distinct}</if>
+        <choose>
+            <when test="resultColumn!=null">${resultColumn}</when>
+            <otherwise>
+        <include refid="sys_permission_Column" /> 
+            </otherwise>
+        </choose>
+        from sys_permission
+        <choose>
+            <when test="rowSize ==null">
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+            </when>
+            <otherwise>
+                inner join
+                (
+                SELECT id as primary_key FROM sys_permission
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+                <choose>
+                    <when test="startRow !=null and rowSize !=null">LIMIT #{startRow},#{rowSize} </when>
+                    <when test="rowSize !=null">LIMIT #{rowSize}</when>
+                 </choose>
+                 ) as tmp
+                 on tmp.primary_key=sys_permission.id
+            </otherwise>
+        </choose>
+    </select> 
+
+    <!-- 获得一个SysPermission对象,以参数SysPermission对象中不为空的属性作为条件进行查询-->
+    <select id="selectSysPermissionByObj" parameterType="com.wiserv.bean.po.SysPermission" resultMap="result_SysPermission_Map">
+        select 
+            <include refid="sys_permission_Column" /> 
+        from sys_permission
+        <where>
+            <if test="state != null "> and sys_permission.state = #{state}</if>
+            <if test="pId != null "> and sys_permission.p_id = #{pId}</if>
+            <if test="code != null "> and sys_permission.code = #{code}</if>
+            <if test="url != null "> and sys_permission.url = #{url}</if>
+            <if test="description != null "> and sys_permission.description = #{description}</if>
+            <if test="name != null "> and sys_permission.name = #{name}</if>
+            <if test="id != null "> and sys_permission.id = #{id}</if>
+        </where>
+    </select> 
+
+    <!-- 通过SysPermission的id获得对应数据库中表的数据对象-->
+    <select id="selectSysPermissionById" parameterType="java.lang.Integer" resultMap="result_SysPermission_Map">
+        select 
+            <include refid="sys_permission_Column" /> 
+        from sys_permission
+        where sys_permission.id = #{id}
+    </select> 
+
+    <!-- 将SysPermission插入到对应数据库的表中,包括属性值为null的数据-->
+
+    <insert id="insertSysPermission" parameterType="com.wiserv.bean.po.SysPermission">
+        insert into sys_permission(id,name,description,url,code,p_id,state) 
+        values(#{id},#{name},#{description},#{url},#{code},#{pId},#{state})
+    </insert>
+
+    <!-- 将SysPermission中属性值不为null的数据,插入到对应数据库的表中-->
+    <insert id="insertNonEmptySysPermission" parameterType="com.wiserv.bean.po.SysPermission">
+        insert into sys_permission
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="name != null">name,</if>
+            <if test="description != null">description,</if>
+            <if test="url != null">url,</if>
+            <if test="code != null">code,</if>
+            <if test="pId != null">p_id,</if>
+            <if test="state != null">state,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null"> #{id},</if>
+            <if test="name != null"> #{name},</if>
+            <if test="description != null"> #{description},</if>
+            <if test="url != null"> #{url},</if>
+            <if test="code != null"> #{code},</if>
+            <if test="pId != null"> #{pId},</if>
+            <if test="state != null"> #{state},</if>
+        </trim>
+    </insert>
+
+    <!-- 通过SysPermission的id将数据库表中对应的数据删除-->
+    <delete id="deleteSysPermissionById" parameterType="java.lang.Integer">
+        delete from sys_permission
+        where id = #{id}
+    </delete>
+
+    <!-- 通过辅助工具Assist中的条件将SysPermission对应的数据库表的数据删除-->
+    <delete id="deleteSysPermission" parameterType="com.wiserv.common.Assist">
+        delete from sys_permission
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <!-- 通过SysPermission的id将SysPermission的数据更新到数据库中对应的表,包括值null的数据-->
+    <update id="updateSysPermissionById" parameterType="com.wiserv.bean.po.SysPermission">
+        update sys_permission set
+            name=#{name}
+            ,description=#{description}
+            ,url=#{url}
+            ,code=#{code}
+            ,p_id=#{pId}
+            ,state=#{state}
+        where id=#{id}
+    </update>
+
+    <!-- 通过SysPermission的id将SysPermission中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptySysPermissionById" parameterType="com.wiserv.bean.po.SysPermission">
+        update sys_permission
+        <set>
+            <if test="name != null">
+                name=#{name},
+            </if>
+            <if test="description != null">
+                description=#{description},
+            </if>
+            <if test="url != null">
+                url=#{url},
+            </if>
+            <if test="code != null">
+                code=#{code},
+            </if>
+            <if test="pId != null">
+                p_id=#{pId},
+            </if>
+            <if test="state != null">
+                state=#{state},
+            </if>
+        </set>
+        where id=#{id}
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将SysPermission中的数据更新到数据库对应的表中,包括值为null的数据-->
+    <update id="updateSysPermission" parameterType="map">
+        update sys_permission
+        <set>
+                id=#{enti.id},
+                name=#{enti.name},
+                description=#{enti.description},
+                url=#{enti.url},
+                code=#{enti.code},
+                p_id=#{enti.pId},
+                state=#{enti.state},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将SysPermission中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptySysPermission" parameterType="map">
+        update sys_permission
+        <set>
+            <if test="enti.id != null">
+                id=#{enti.id},
+            </if>
+            <if test="enti.name != null">
+                name=#{enti.name},
+            </if>
+            <if test="enti.description != null">
+                description=#{enti.description},
+            </if>
+            <if test="enti.url != null">
+                url=#{enti.url},
+            </if>
+            <if test="enti.code != null">
+                code=#{enti.code},
+            </if>
+            <if test="enti.pId != null">
+                p_id=#{enti.pId},
+            </if>
+            <if test="enti.state != null">
+                state=#{enti.state},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>
